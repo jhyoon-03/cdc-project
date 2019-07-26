@@ -1,1 +1,1 @@
-# cdc_reich
+# cdc-reich
