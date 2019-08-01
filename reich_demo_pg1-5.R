@@ -1,5 +1,6 @@
-#07.26.19
-#page 1. Getting started
+# Running Reich Lab demo pg 1-5
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#page 1. Getting started 
 
 #install.packages("devtools")
 #install.packages("usethis")
@@ -51,8 +52,9 @@ install.packages("remotes")
 remotes::install_github("reichlab/sarimaTD")
 install.packages("sarimaTD")
 #I added 50-53 b/c R 03.05.01 has difficulty reading sarimaTD
-############################################################################################################
-#page 2. Raw Data 
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#page 2. Raw Data
 
 library(cdcfluview)
 library(dplyr)
@@ -73,7 +75,7 @@ plot <- ggplot() +
   ggtitle("National Weighted Inluenza-Like Illness")
 print(plot)
 
-#################################################################################################################
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #page3. Incidence Matrix
 
 library(R6)
@@ -96,7 +98,7 @@ data_object$colData
 
 data_object$mat
 
-#################################################################################################################
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #page4. Fitting & Forecasting
 library(ForecastFramework)
 library(R6)
@@ -120,7 +122,6 @@ source_github <- function(u) {
 source_github('https://raw.githubusercontent.com/reichlab/forecast-framework-demos/master/models/ContestModel.R')
 source_github('https://raw.githubusercontent.com/reichlab/forecast-framework-demos/master/models/SARIMATD1Model.R')
 
-## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## 
 #new sarimaTDmodel class
 nsim <- 10 # Number of SARIMA simulations 
 sarimaTDmodel <- SARIMATD1Model$new(period = 52, nsim = nsim)
@@ -221,7 +222,7 @@ ggplot(data=preds_df, aes(x=date_sick)) +
             data = data_X_3years) +
   xlab("") + ylab("Weighted ILI")
 
-#################################################################################################################
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #page 5. Evaluating Multiple Modles
 library(ForecastFramework)
 library(R6)
@@ -412,142 +413,4 @@ head(sarima_eval)
 table(sarima_eval)
 display.grid(sarima_eval)
 return(sarima_eval)
-
-
-
-#################################################################################################################
-#page 6. Creating Own Model
-
-#I added this code below (line 423)
-data <- read.table(pipe("pbpaste"), sep="\t", header = TRUE)
-
-library(ForecastFramework)
-library(R6)
-library(forecast)
-library(sarimaTD)
-
-SARIMATD1Model <- R6Class(
-  inherit = ContestModel,
-  private = list(
-    .data = NULL,        ## every model should have this
-    .models = list(),    ## specific to models that are fit separately for each location
-    .nsim = 1000,        ## models that are simulating forecasts need this
-    .period = integer(0) ## specific to SARIMA models
-  ),
-  public = list(
-    ## data will be MatrixData
-    fit = function(data) {
-      if("fit" %in% private$.debug){browser()}
-      ## stores data for easy access and checks to make sure it's the right class
-      private$.my_data <- IncidenceMatrix$new(data)
-      
-      ## for each location/row
-      for (row_idx in 1:private$.data$nrow) {
-        ### need to create a y vector with incidence at time t
-        y <- private$.data$subset(rows = row_idx, mutate = FALSE)
-        
-        ## convert y vector to time series data type
-        y_ts <- ts(as.vector(y$mat), frequency = private$.period)
-        
-        ## fit sarimaTD with 'fit_sarima()' from sarimaTD package
-        ## fit_sarima() performs box-cox transformation and seasonal differencing
-        private$.models[[row_idx]] <- fit_sarima(y = y_ts,
-                                                 transformation = "box-cox",
-                                                 seasonal_difference = TRUE)
-      }
-    },
-    forecast = function(newdata = private$.data, steps) {
-      ## include for debugging
-      if("forecast" %in% private$.debug){browser()} 
-      
-      ## number of models (provinces) to forecast
-      nmodels <- length(private$.models)
-      
-      ## define an array to store the simulated forecasts
-      sim_forecasts <- array(dim = c(nmodels, steps, private$.nsim))
-      dimnames(sim_forecasts) <- list(newdata$rnames, 1:steps, NULL)
-      
-      ## iterate through each province and forecast with simulate.satimaTD
-      for(model_idx in 1:length(private$.models)) {
-        tmp_arima <-  simulate(object = private$.models[[model_idx]],
-                               nsim = private$.nsim,
-                               seed = 1,
-                               newdata = as.vector(newdata$mat[model_idx,]),
-                               h = steps
-        )
-        ## transpose simulate() output to be consistent with ForecastFramework
-        tmp_arima <- t(tmp_arima)
-        sim_forecasts[model_idx, , ] <- tmp_arima
-      }
-      private$output <- SimulatedIncidenceMatrix$new(sim_forecasts)
-      return(IncidenceForecast$new(private$output, forecastTimes = rep(TRUE, steps)))
-    },
-    initialize = function(period = 26, nsim=1000) { 
-      ## this code is run during SARIMAModel$new()
-      ## need to store these arguments within the model object
-      private$.nsim <- nsim
-      private$.period <- period
-    }
-  )
-)
-
-
-#####################################################
-#Testing
-
-# training data for province 10, years 2006 - 2012 
-library(ForecastFramework)
-library(R6)
-library(forecast)
-library(dplyr)
-library(ggplot2)
-library(cdcfluview)
-
-# Source R6 Files
-library(RCurl)
-
-# Function of Source Github Models
-source_github <- function(u) {
-  script <- getURL(u, ssl.verifypeer = FALSE)
-  eval(parse(text = script),envir=.GlobalEnv)
-}  
-# Source R6 Files
-source_github('https://raw.githubusercontent.com/reichlab/forecast-framework-demos/master/models/ContestModel.R')
-source_github('https://raw.githubusercontent.com/reichlab/forecast-framework-demos/master/models/SARIMATD1Model.R')
-
-# Preprocess data to Inc Matrix
-data2 <- ilinet(region = "National")
-data2 <- data2 %>% filter( week != 53)
-data2 <- data2 %>% 
-  filter( year > 2009 & 
-            year < 2018 & 
-            !(year == 2017 & week > 18))
-data2 <- data2 %>%
-  select('region','year','week','weighted_ili', 'week_start')
-
-preprocess_inc <- function(dat){
-  dat$time.in.year = dat$week
-  dat$t = dat$year + dat$week/52
-  inc = ObservationList$new(dat)
-  inc$formArray('region','t',val='weighted_ili',
-                dimData = list(NULL,list('week','year','time.in.year','t')),
-                metaData = list(t.step = 1/52,max.year.time = 52))
-  return(inc)
-}
-training_data <- data2 %>% 
-  filter( ! ((year == 2016 & week >= 19)| (year == 2017 ) ))
-training_inc <- preprocess_inc(training_data)
-
-# Create new SARIMATD model
-nsim <- 10 # Number of SARIMA simulations 
-sarimaTD_model <- SARIMATD1Model$new(period = 52, nsim = nsim)
-
-# Fit SARIMATD model
-sarimaTD_model$fit(training_inc)
-
-# Forecast SARIMATD Model
-steps <- 52 # forecast ahead 26 biweeks
-forecast_X <- sarimaTD_model$forecast(steps = steps)
-
-print(forecast_X$data$mat)
 
