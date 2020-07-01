@@ -34,6 +34,7 @@ public class SLList {
         public String toString() {
             return item + "";
         }
+
     }
 
     /* The first item (if it exists) is at sentinel.next. */
@@ -117,30 +118,67 @@ public class SLList {
 
     /** Adds x to the list at the specified index. */
     public void add(int index, int x) {
-        // TODO
-        IntListNode a = sentinel.next;
-        if (index == 0 || size == 0) { // index = 0
+        IntListNode a = sentinel.next; //
+        if (index == 0 || size == 0) {
             sentinel.next = new IntListNode(x, sentinel);
         } else if (index >= size) {
             int i = index;
             while (i > 0) {
                 a = a.next;
-                i=i-1;
+                i--;
             }
             a.next = new IntListNode(x, sentinel);
         } else {
-            for (int i = 0; i < index - 1; i++) {
+            for (int i = 0; i < index-1; i++) {
                 a = a.next;
             }
             IntListNode b = new IntListNode(x, a.next);
             a.next = b;
         }
-        size=size+1;
+        size++;
     }
-
 
     /** Destructively reverses this list. */
     public void reverse() {
-        // TODO
+        //SLList a.item = sentinel;
+        if (size == 0) {
+            sentinel.next = sentinel;
+        } else {
+            reverseHelper(sentinel.next);
+        }
     }
+
+    public IntListNode reverseHelper(IntListNode a) { //a is [1,2,3,4]
+        IntListNode b = new IntListNode(0, null);
+        if (size == 1) {
+            sentinel = sentinel;
+        } else {
+            b.next = sentinel;
+            return reverseHelper(sentinel.next);
+        }
+
+        sentinel.next = new IntListNode(x, sentinel.next);
+        size += 1;
+
+
+        //comments & past attempts
+        IntListNode temp = a;
+        while (a != sentinel) {
+            temp.next = a.next;
+            a = a.next; //infinite loop
+            reverseHelper(a);
+        }
+        temp.next.item = get(size);
+        IntListNode z = new IntListNode(0, null); //start at z.next;
+        while (size != 0) {
+            z.next = temp.next;
+            //append tail to beginning
+            //size--;
+        }
+        IntListNode tail = a;
+        sentinel.next = tail; //temp;
+
+        return sentinel;
+    }
+
 }
