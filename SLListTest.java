@@ -24,26 +24,40 @@ public class SLListTest {
         assertEquals(SLList.of(0, 1, 2, 3, 4, 5), test1);
     }
 
+
     @Test
-    public void testSLListReverse() {
-        //general case for lists of size >= 2
-        SLList A_1 = SLList.of(1,2,3);
-        SLList A_2 = SLList.of(3,2,1);
-        assertEquals(A_1, A_2);
+    public void testSLListReverse_1() {
+        SLList test1 = SLList.of(1);
+        SLList test2 = SLList.of(1);
+        assertEquals(test1, test2);
 
-        SLList B_1 = SLList.of(11,22,33,44);
-        SLList B_2 = SLList.of(44,33,22,11);
-        assertEquals(B_1, B_2);
+        test1.reverse();
+        assertEquals(1, test1.size());
+        assertEquals(1, test1.get(0));
+    }
 
-        //base case: function reverses a list of size 1 by completing without erroring
-        SLList C_1 = SLList.of(1);
-        SLList C_2 = SLList.of(1);
-        assertEquals(C_1, C_2);
+    @Test
+    public void testSLListReverse_2() {
+        SLList test1 = new SLList();
+        SLList test2 = new SLList();
+        assertEquals(test1, test2);
 
-        //base case: function reverses a list of size 0 by completing without erroring
-        SLList D_1 = SLList.of();
-        SLList D_2 = SLList.of();
-        assertEquals(D_1, D_2);
+        test1.reverse();
+        assertEquals(0, test1.size());
+        assertEquals(42, test1.get(0)); //an empty list is represented by just a sentinel
+        // sentinel node always exists (even when our list is empty)
+    }
+
+    @Test
+    public void testSLListReverse_3() {
+        SLList test1 = SLList.of(1, 2, 3, 4); //I expect [1,2,3,4] to become [4,3,2,1]
+        test1.reverse();
+        assertEquals(4, test1.size());
+        assertEquals(1, test1.get(0));
+        assertEquals(2, test1.get(1));
+        assertEquals(3, test1.get(2));
+        assertEquals(4, test1.get(3));
+
     }
 
 }
